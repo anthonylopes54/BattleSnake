@@ -101,7 +101,7 @@ public class Snake {
         public Map<String, String> index() {         
             Map<String, String> response = new HashMap<>();
             response.put("apiversion", "1");
-            response.put("author", "");           // TODO: Your Battlesnake Username
+            response.put("author", "ChaBFic");           // TODO: Your Battlesnake Username
             response.put("color", "#888888");     // TODO: Personalize
             response.put("head", "default");  // TODO: Personalize
             response.put("tail", "default");  // TODO: Personalize
