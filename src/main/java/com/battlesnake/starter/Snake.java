@@ -3,6 +3,7 @@ package com.battlesnake.starter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import spark.Request;
@@ -181,9 +182,9 @@ public class Snake {
             JsonNode board = moveRequest.get("board");
             JsonNode snake = moveRequest.get("you");
             JsonNode listOfHazards = board.get("hazards");
-            int lengthOfHazards = ((List) board.get("hazards")).size();
+            int lengthOfHazards = board.get("hazards").size();
             JsonNode listOfSnakes = board.get("snakes");
-            int lengthOfSnakes = ((List) board.get("snakes")).size();
+            int lengthOfSnakes = board.get("snakes").size();
             HashSet<MovementService.QueueObj> obstacles = MovementService.findObstacles(listOfHazards, lengthOfHazards, listOfSnakes, lengthOfSnakes);
             String nextDirection = MovementService.getBestFood(board, snake, listOfHazards, lengthOfHazards, listOfSnakes, lengthOfSnakes, obstacles);
             return !nextDirection.isEmpty() ? nextDirection : MovementService.chaseTail(board, obstacles);
@@ -194,9 +195,9 @@ public class Snake {
 
         public static String getBestFood(JsonNode board, JsonNode mySnake, JsonNode listOfHazards, int lengthOfHazards, JsonNode listOfSnakes, int lengthOfSnakes, HashSet<QueueObj> obstacles) {
             JsonNode listOfFood = board.get("food");
-            int lengthOfFood = ((List) board.get("food")).size();
+            int lengthOfFood = board.get("food").size();
             int bestPathLengthSoFar = Integer.MAX_VALUE;
-            int mySnakeSize = ((List) mySnake.get("body")).size();
+            int mySnakeSize = mySnake.get("body").size();
             String bestDirectionSoFar = "";
             for (int i = 0; i < lengthOfFood; i++) {
                 JsonNode currFood = listOfFood.get(i);
@@ -216,7 +217,7 @@ public class Snake {
                     shortestEnemyPath = findShortestPath(currEnemySnake.get("head"), currFood, obstacles);
                     if (shortestEnemyPath == null) continue;
                     if (shortestEnemyPath.distance == myShortestPathToFood.distance) {
-                        willEnemyWin = mySnakeSize <= ((List) currEnemySnake.get("body")).size();
+                        willEnemyWin = mySnakeSize <= currEnemySnake.get("body").size();
                     } else {
                         willEnemyWin = myShortestPathToFood.distance > shortestEnemyPath.distance;
                     }
@@ -344,7 +345,7 @@ public class Snake {
         public static String chaseTail(JsonNode board, HashSet<QueueObj> obstacles) {
             JsonNode myHead = board.get("you").get("head");
             JsonNode listOfBody = board.get("you").get("body");
-            int bodyLength = ((List) board.get("you").get("body")).size();
+            int bodyLength = board.get("you").get("body").size();
 
             QueueObj shortestPath = findShortestPath(myHead, listOfBody.get(bodyLength - 1), obstacles);
             if (shortestPath != null) return shortestPath.direction;
