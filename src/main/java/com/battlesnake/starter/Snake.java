@@ -8,9 +8,7 @@ import org.slf4j.LoggerFactory;
 import spark.Request;
 import spark.Response;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 import static spark.Spark.port;
 import static spark.Spark.post;
@@ -151,12 +149,13 @@ public class Snake {
 
             // Choose a random direction to move in
             int choice = new Random().nextInt(possibleMoves.length);
-            String move = possibleMoves[choice];
+            // String move = possibleMoves[choice];
+            String nextMove = DefensiveHungry.findNextMove(moveRequest);
 
-            LOG.info("MOVE {}", move);
+            LOG.info("MOVE {}", nextMove);
 
             Map<String, String> response = new HashMap<>();
-            response.put("move", move);
+            response.put("move", nextMove);
             return response;
         }
 
@@ -174,6 +173,182 @@ public class Snake {
 
             LOG.info("END");
             return EMPTY;
+        }
+    }
+
+    private static class DefensiveHungry {
+        public static String findNextMove(JsonNode moveRequest) {
+            JsonNode board = moveRequest.get("board");
+            JsonNode snake = moveRequest.get("you");
+            JsonNode listOfHazards = board.get("hazards");
+            int lengthOfHazards = ((List) board.get("hazards")).size();
+            JsonNode listOfSnakes = board.get("snakes");
+            int lengthOfSnakes = ((List) board.get("snakes")).size();
+            HashSet<MovementService.QueueObj> obstacles = MovementService.findObstacles(listOfHazards, lengthOfHazards, listOfSnakes, lengthOfSnakes);
+            String nextDirection = MovementService.getBestFood(board, snake, listOfHazards, lengthOfHazards, listOfSnakes, lengthOfSnakes, obstacles);
+            return !nextDirection.isEmpty() ? nextDirection : MovementService.chaseTail(board, obstacles);
+        }
+    }
+
+    private static class MovementService {
+
+        public static String getBestFood(JsonNode board, JsonNode mySnake, JsonNode listOfHazards, int lengthOfHazards, JsonNode listOfSnakes, int lengthOfSnakes, HashSet<QueueObj> obstacles) {
+            JsonNode listOfFood = board.get("food");
+            int lengthOfFood = ((List) board.get("food")).size();
+            int bestPathLengthSoFar = Integer.MAX_VALUE;
+            int mySnakeSize = ((List) mySnake.get("body")).size();
+            String bestDirectionSoFar = "";
+            for (int i = 0; i < lengthOfFood; i++) {
+                JsonNode currFood = listOfFood.get(i);
+                QueueObj myShortestPathToFood;
+                myShortestPathToFood = findShortestPath(mySnake.get("head"), currFood, obstacles);
+
+                if (myShortestPathToFood == null) continue;
+                if (myShortestPathToFood.distance >= bestPathLengthSoFar) continue;
+
+                boolean willEnemyWin = false;
+
+                for (int j = 0; j < lengthOfSnakes; j++) {
+                    if (willEnemyWin) break;
+                    JsonNode currEnemySnake = listOfSnakes.get(j);
+                    if (currEnemySnake.get("id").equals(mySnake.get("id"))) continue;
+                    QueueObj shortestEnemyPath;
+                    shortestEnemyPath = findShortestPath(currEnemySnake.get("head"), currFood, obstacles);
+                    if (shortestEnemyPath == null) continue;
+                    if (shortestEnemyPath.distance == myShortestPathToFood.distance) {
+                        willEnemyWin = mySnakeSize <= ((List) currEnemySnake.get("body")).size();
+                    } else {
+                        willEnemyWin = myShortestPathToFood.distance > shortestEnemyPath.distance;
+                    }
+                }
+
+                if(!willEnemyWin) {
+                    bestPathLengthSoFar = myShortestPathToFood.distance;
+                    bestDirectionSoFar = myShortestPathToFood.direction;
+                }
+
+            }
+            return bestDirectionSoFar;
+        }
+
+        private static HashSet<QueueObj> findObstacles(JsonNode listOfHazards, int lengthOfHazards, JsonNode listOfSnakes, int lengthOfSnakes) {
+            HashSet<QueueObj> rsf = new HashSet();
+            for (int i = 0; i  < lengthOfHazards; i++) {
+                rsf.add(new QueueObj(listOfHazards.get(i).get("x").asInt(), listOfHazards.get(i).get("y").asInt()));
+            }
+            for (int i = 0; i  < lengthOfSnakes; i++) {
+                rsf.add(new QueueObj(listOfSnakes.get(i).get("x").asInt(), listOfSnakes.get(i).get("y").asInt()));
+            }
+            return rsf;
+        }
+
+
+
+        public static QueueObj findShortestPath(JsonNode head, JsonNode target, HashSet<QueueObj> obstacles) {
+            HashSet<QueueObj> seen = new HashSet<>();
+            Queue<QueueObj> q = new LinkedList<>();
+            int targetX = target.get("x").asInt();
+            int targetY = target.get("y").asInt();
+            QueueObj firstObj = new QueueObj(head.get("x").asInt(), head.get("y").asInt());
+            q.offer(firstObj);
+            seen.add(firstObj);
+            int level = 0;
+            while (!q.isEmpty()) {
+                int size = q.size();
+                while (size > 0) {
+                    QueueObj curr = q.poll();
+                    if (curr.xCoord == targetX && curr.yCoord == targetY) {
+                        curr.distance = level;
+                        return curr;
+                    }
+
+                    if (curr.yCoord + 1 < 11) {
+                        QueueObj objToAdd = new QueueObj(curr.xCoord, curr.yCoord + 1, curr.direction);
+                        if (!seen.contains(objToAdd) && !obstacles.contains(objToAdd)) {
+                            if (objToAdd.direction == null) {
+                                objToAdd.direction = "up";
+                            }
+                            q.offer(objToAdd);
+                        }
+                    }
+                    if (curr.xCoord + 1 < 11) {
+                        QueueObj objToAdd = new QueueObj(curr.xCoord + 1, curr.yCoord, curr.direction);
+                        if (!seen.contains(objToAdd) && !obstacles.contains(objToAdd)) {
+                            if (objToAdd.direction == null) {
+                                objToAdd.direction = "right";
+                            }
+                            q.offer(objToAdd);
+                        }
+                    }
+                    if (curr.yCoord - 1 >= 0) {
+                        QueueObj objToAdd = new QueueObj(curr.xCoord, curr.yCoord - 1, curr.direction);
+                        if (!seen.contains(objToAdd) && !obstacles.contains(objToAdd)) {
+                            if (objToAdd.direction == null) {
+                                objToAdd.direction = "down";
+                            }
+                            q.offer(objToAdd);
+                        }
+                    }
+                    if (curr.xCoord + 1 >= 0) {
+                        QueueObj objToAdd = new QueueObj(curr.xCoord - 1, curr.yCoord, curr.direction);
+                        if (!seen.contains(objToAdd) && !obstacles.contains(objToAdd)) {
+                            if (objToAdd.direction == null) {
+                                objToAdd.direction = "left";
+                            }
+                            q.offer(objToAdd);
+                        }
+                    }
+                    size--;
+                }
+                level++;
+            }
+            return null;
+        }
+
+        public static class QueueObj {
+            String direction;
+            int xCoord;
+            int yCoord;
+            int distance;
+
+            @Override
+            public boolean equals(Object o) {
+                if (this == o) return true;
+                if (!(o instanceof QueueObj)) return false;
+                QueueObj queueObj = (QueueObj) o;
+                return xCoord == queueObj.xCoord &&
+                        yCoord == queueObj.yCoord &&
+                        distance == queueObj.distance &&
+                        Objects.equals(direction, queueObj.direction);
+            }
+
+            @Override
+            public int hashCode() {
+                return Objects.hash(direction, xCoord, yCoord, distance);
+            }
+
+            public QueueObj(int xCoord, int yCoord) {
+                this.xCoord = xCoord;
+                this.yCoord = yCoord;
+                this.direction = null;
+                this.distance = -1;
+            }
+            public QueueObj(int xCoord, int yCoord, String direction) {
+                this.xCoord = xCoord;
+                this.yCoord = yCoord;
+                this.direction = direction;
+                this.distance = -1;
+            }
+        }
+
+        public static String chaseTail(JsonNode board, HashSet<QueueObj> obstacles) {
+            JsonNode myHead = board.get("you").get("head");
+            JsonNode listOfBody = board.get("you").get("body");
+            int bodyLength = ((List) board.get("you").get("body")).size();
+
+            QueueObj shortestPath = findShortestPath(myHead, listOfBody.get(bodyLength - 1), obstacles);
+            if (shortestPath != null) return shortestPath.direction;
+            return "down"; //todo
         }
     }
 
