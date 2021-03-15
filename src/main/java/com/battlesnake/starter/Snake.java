@@ -265,7 +265,7 @@ public class Snake {
                     QueueObj curr = q.poll();
                     if (curr.xCoord == targetX && curr.yCoord == targetY) {
                         curr.distance = level;
-                        System.out.println("x: " + curr.xCoord + " y: " + curr.yCoord);
+                        System.out.println("x: " + curr.xCoord + " y: " + curr.yCoord + " direction: " + curr.direction);
                         return curr;
                     }
 
