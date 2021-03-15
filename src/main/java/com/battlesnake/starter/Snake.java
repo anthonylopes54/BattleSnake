@@ -232,14 +232,19 @@ public class Snake {
             return bestDirectionSoFar;
         }
 
-        private static HashSet<QueueObj> findObstacles(JsonNode listOfHazards, int lengthOfHazards, JsonNode listOfSnakes, int lengthOfSnakes) {
+        private static HashSet<QueueObj> findObstacles(JsonNode listOfHazards, int lengthOfHazards, JsonNode listOfSnakes, int lengthOfSnakes) throws JsonProcessingException {
             HashSet<QueueObj> rsf = new HashSet();
+            //JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(listOfHazards);
             for (int i = 0; i  < lengthOfHazards; i++) {
                 rsf.add(new QueueObj(listOfHazards.get(i).get("x").asInt(), listOfHazards.get(i).get("y").asInt()));
             }
             for (int i = 0; i  < lengthOfSnakes; i++) {
-                rsf.add(new QueueObj(listOfSnakes.get(i).get("x").asInt(), listOfSnakes.get(i).get("y").asInt()));
+                JsonNode currSnake = listOfSnakes.get(i);
+                for (int j = 0; j < currSnake.get("body").size(); j++) {
+                    rsf.add(new QueueObj(currSnake.get(j).get("x").asInt(), currSnake.get(j).get("y").asInt()));
+                }
             }
+
             return rsf;
         }
 
