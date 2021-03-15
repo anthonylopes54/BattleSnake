@@ -232,7 +232,7 @@ public class Snake {
             return bestDirectionSoFar;
         }
 
-        private static HashSet<QueueObj> findObstacles(JsonNode listOfHazards, int lengthOfHazards, JsonNode listOfSnakes, int lengthOfSnakes) throws JsonProcessingException {
+        private static HashSet<QueueObj> findObstacles(JsonNode listOfHazards, int lengthOfHazards, JsonNode listOfSnakes, int lengthOfSnakes) {
             HashSet<QueueObj> rsf = new HashSet();
             //JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(listOfHazards);
             for (int i = 0; i  < lengthOfHazards; i++) {
