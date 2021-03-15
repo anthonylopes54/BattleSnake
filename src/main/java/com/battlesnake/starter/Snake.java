@@ -241,7 +241,7 @@ public class Snake {
             for (int i = 0; i  < lengthOfSnakes; i++) {
                 JsonNode currSnake = listOfSnakes.get(i);
                 for (int j = 0; j < currSnake.get("body").size(); j++) {
-                    rsf.add(new QueueObj(currSnake.get(j).get("body").get("x").asInt(), currSnake.get(j).get("body").get("y").asInt()));
+                    rsf.add(new QueueObj(currSnake.get("body").get(j).get("x").asInt(), currSnake.get("body").get(j).get("y").asInt()));
                 }
             }
 
