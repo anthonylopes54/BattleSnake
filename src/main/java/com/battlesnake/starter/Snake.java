@@ -265,6 +265,7 @@ public class Snake {
                     QueueObj curr = q.poll();
                     if (curr.xCoord == targetX && curr.yCoord == targetY) {
                         curr.distance = level;
+                        System.out.println("x: " + curr.xCoord + " y: " + curr.yCoord);
                         return curr;
                     }
 
@@ -295,7 +296,7 @@ public class Snake {
                             q.offer(objToAdd);
                         }
                     }
-                    if (curr.xCoord + 1 >= 0) {
+                    if (curr.xCoord - 1 >= 0) {
                         QueueObj objToAdd = new QueueObj(curr.xCoord - 1, curr.yCoord, curr.direction);
                         if (!seen.contains(objToAdd) && !obstacles.contains(objToAdd)) {
                             if (objToAdd.direction == null) {
