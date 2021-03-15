@@ -67,7 +67,7 @@ public class Snake {
             try {
                 JsonNode parsedRequest = JSON_MAPPER.readTree(req.body());
                 String uri = req.uri();
-                LOG.info("{} called with: {}", uri, req.body());
+                //LOG.info("{} called with: {}", uri, req.body());
                 Map<String, String> snakeResponse;
                 if (uri.equals("/")) {
                     snakeResponse = index();
@@ -80,7 +80,7 @@ public class Snake {
                 } else {
                     throw new IllegalAccessError("Strange call made to the snake: " + uri);
                 }
-                LOG.info("Responding with: {}", JSON_MAPPER.writeValueAsString(snakeResponse));
+                //LOG.info("Responding with: {}", JSON_MAPPER.writeValueAsString(snakeResponse));
                 return snakeResponse;
             } catch (Exception e) {
                 LOG.warn("Something went wrong!", e);
@@ -132,11 +132,11 @@ public class Snake {
          * @return a response back to the engine containing Battlesnake movement values.
          */
         public Map<String, String> move(JsonNode moveRequest) {
-            try {
-                LOG.info("Data: {}", JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(moveRequest));
-            } catch (JsonProcessingException e) {
-                e.printStackTrace();
-            }
+//            try {
+//                LOG.info("Data: {}", JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(moveRequest));
+//            } catch (JsonProcessingException e) {
+//                e.printStackTrace();
+//            }
 
             /*
                 Example how to retrieve data from the request payload:
@@ -265,7 +265,6 @@ public class Snake {
                     QueueObj curr = q.poll();
                     if (curr.xCoord == targetX && curr.yCoord == targetY) {
                         curr.distance = level;
-                        System.out.println("x: " + curr.xCoord + " y: " + curr.yCoord + " direction: " + curr.direction);
                         return curr;
                     }
 
